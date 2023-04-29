@@ -7,7 +7,7 @@ function MealItem({name, price, description, id}) {
     const { cartAddItem } = useContext(Context);
 
     const onAddItem = (qty) => {
-        const item = {name, price: qty * price, id, qty: qty};
+        const item = {name, price: price, id, qty: qty};
         cartAddItem(item);
     } 
     return (

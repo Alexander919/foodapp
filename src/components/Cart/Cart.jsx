@@ -6,14 +6,14 @@ import  Context from "../../store/Context";
 
 function Cart() {
     const { cartCloseHandler, cartContainedItems } = useContext(Context);
-    const totalAmount = cartContainedItems.reduce((acc, item) => acc + item.price, 0).toFixed(2);
+    const totalPrice = cartContainedItems.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2);
     const hasItems = cartContainedItems.length > 0;
 
     const cartItems = 
         <ul className={classes["cart-items"]}>
             {cartContainedItems.map(({qty, price, name, id}) => {
                 return (
-                    <CartItem key={id} name={name} qty={qty} price={price}/>
+                    <CartItem key={id} id={id} name={name} qty={qty} price={price}/>
                 );
             })}
         </ul>
@@ -23,7 +23,7 @@ function Cart() {
             {cartItems}
             <div className={classes.total}>
                 <span>Total Amount</span>
-                <span>${totalAmount}</span>
+                <span>${totalPrice}</span>
             </div>
             <div className={classes.actions}>
                 <button onClick={cartCloseHandler} className={classes["button--alt"]}>Close</button>

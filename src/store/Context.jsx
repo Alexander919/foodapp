@@ -30,34 +30,58 @@ const DUMMY_MEALS = [
 
 const Context = React.createContext();
 
-const defaultCartState = {
-    items: [],
-    totalAmount: 0
-};
 
 const cartReducer = (state, action) => {
+    let inx;
     switch(action.type) {
         case "add":
-            const updatedItems = state.items.concat(action.payload);
-            const updatedTotalAmount = state.totalAmount + action.payload.price * action.payload.amount;
-            return { items: updatedItems, totalAmount: updatedTotalAmount };
+            //if item already in cart
+            //{id, price, qty, name}
+            inx = state.findIndex(item => item.id === action.payload.id);
+
+            if(inx !== -1) { //repeated item
+                const repeatedItem = state[inx];
+                const qty = repeatedItem.qty + action.payload.qty;
+                // const price = repeatedItem.price + newItem.price;
+
+                const updatedItem = { ...repeatedItem, qty };
+                const newCartItems = [...state];
+                newCartItems[inx] = updatedItem;
+
+                return newCartItems;
+            } else {
+                return [...state, action.payload];
+            }
         case "remove":
-            return
+            const updatedItems = [...state];
+            inx = updatedItems.findIndex(item => item.id === action.payload.id);
+
+            if(updatedItems[inx].qty > 1) {
+                const updatedItem = { ...updatedItems[inx] };
+                updatedItem.qty -= 1;
+
+                updatedItems[inx] = updatedItem;
+
+                return updatedItems;
+            } else {
+                updatedItems.splice(inx, 1);
+                return updatedItems;
+            }
         default:
-            return defaultCartState;
+            return state;
     }
 };
 
 export function ContextComponent({ children }) {
 
-    const [cartState, dispatchCart] = useReducer(cartReducer, defaultCartState);
+    const [cartItems2, dispatchCart] = useReducer(cartReducer, []);
     
-    const addItemToCartHandler2 = (item) => {
-        dispatchCart({type: "add", payload: item});
+    const addItemToCartHandler2 = item => {
+        dispatchCart({ type: "add", payload: item });
     };
 
-    const removeItemFromCartHandler2 = (item) => {
-        dispatchCart({type: "remove", payload: item});
+    const removeItemFromCartHandler2 = id => {
+        dispatchCart({ type: "remove", payload: { id } });
     };
 
     const [cartOpened, setCartOpened] = useState(false);
@@ -65,26 +89,55 @@ export function ContextComponent({ children }) {
 
     const addItemToCartHandler = (newItem) => {
         //if item already in cart
-        if (cartItems.some(cItem => cItem.id === newItem.id)) {
-            setCartItems(oldCartItems => {
-                return oldCartItems.map(({ id, qty: oldQty, price: oldPrice, name }) => {
-                    if (id === newItem.id) {
-                        const qty = oldQty + newItem.qty;
-                        const price = oldPrice + newItem.price;
+        //{id, price, qty, name}
+        const inx = cartItems.findIndex(item => item.id === newItem.id);
 
-                        return { id, qty, price, name };
-                    }
-                    return { id, qty: oldQty, price: oldPrice, name };
-                })
-            });
+        if(inx !== -1) { //repeated item
+            const repeatedItem = cartItems[inx];
+            const qty = repeatedItem.qty + newItem.qty;
+            // const price = repeatedItem.price + newItem.price;
+
+            const updatedItem = { ...repeatedItem, qty };
+            const newCartItems = [...cartItems];
+            newCartItems[inx] = updatedItem;
+
+            setCartItems(newCartItems);
         } else {
-            setCartItems((oldCartItems) => {
-                return [...oldCartItems, newItem];
-            });
+            setCartItems([...cartItems, newItem]);
         }
+        // if (cartItems.some(cItem => cItem.id === newItem.id)) {
+        //     setCartItems(oldCartItems => {
+        //         return oldCartItems.map(({ id, qty: oldQty, price: oldPrice, name }) => {
+        //             if (id === newItem.id) {
+        //                 const qty = oldQty + newItem.qty;
+        //                 const price = oldPrice + newItem.price;
+
+        //                 return { id, qty, price, name };
+        //             }
+        //             return { id, qty: oldQty, price: oldPrice, name };
+        //         })
+        //     });
+        // } else {
+        //     setCartItems((oldCartItems) => {
+        //         return [...oldCartItems, newItem];
+        //     });
+        // }
     };
     const removeItemFromCartHandler = id => {
-        console.log("item removed from the cart");
+        const updatedItems = [...cartItems];
+        const inx = updatedItems.findIndex(item => item.id === id);
+
+        if(updatedItems[inx].qty > 1) {
+            const updatedItem = { ...updatedItems[inx] };
+            updatedItem.qty -= 1;
+
+            updatedItems[inx] = updatedItem;
+
+            setCartItems(updatedItems);
+        } else {
+            updatedItems.splice(inx, 1);
+            setCartItems(updatedItems);
+        }
     };
 
     const cartShowHandler = () => {
@@ -100,9 +153,9 @@ export function ContextComponent({ children }) {
         cartOpened,
         cartShowHandler,
         cartCloseHandler,
-        cartContainedItems: cartItems,
-        cartAddItem: addItemToCartHandler,
-        cartRemoveItem: removeItemFromCartHandler
+        cartContainedItems: cartItems2,
+        cartAddItem: addItemToCartHandler2,
+        cartRemoveItem: removeItemFromCartHandler2
     };
 
     return (

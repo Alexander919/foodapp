@@ -1,32 +1,33 @@
 import React from "react";
-import { useState, useReducer } from "react";
+import { useState, useEffect, useReducer } from "react";
 
-const DUMMY_MEALS = [
-    {
-        id: 'm1',
-        name: 'Sushi',
-        description: 'Finest fish and veggies',
-        price: 22.99,
-    },
-    {
-        id: 'm2',
-        name: 'Schnitzel',
-        description: 'A german specialty!',
-        price: 16.5,
-    },
-    {
-        id: 'm3',
-        name: 'Barbecue Burger',
-        description: 'American, raw, meaty',
-        price: 12.99,
-    },
-    {
-        id: 'm4',
-        name: 'Green Bowl',
-        description: 'Healthy...and green...',
-        price: 18.99,
-    },
-];
+const DUMMY_MEALS = [];
+// const DUMMY_MEALS = [
+//     {
+//         id: 'm1',
+//         name: 'Sushi',
+//         description: 'Finest fish and veggies',
+//         price: 22.99,
+//     },
+//     {
+//         id: 'm2',
+//         name: 'Schnitzel',
+//         description: 'A german specialty!',
+//         price: 16.5,
+//     },
+//     {
+//         id: 'm3',
+//         name: 'Barbecue Burger',
+//         description: 'American, raw, meaty',
+//         price: 12.99,
+//     },
+//     {
+//         id: 'm4',
+//         name: 'Green Bowl',
+//         description: 'Healthy...and green...',
+//         price: 18.99,
+//     },
+// ];
 
 const Context = React.createContext();
 
@@ -67,14 +68,69 @@ const cartReducer = (state, action) => {
                 updatedItems.splice(inx, 1);
                 return updatedItems;
             }
+
+        case "reset-cart":
+            return [];
         default:
             return state;
     }
 };
 
 export function ContextComponent({ children }) {
-
     const [cartItems2, dispatchCart] = useReducer(cartReducer, []);
+
+    const [cartOpened, setCartOpened] = useState(false);
+    const [meals, setMeals] = useState([]);
+
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    //TODO: http Hook
+    const fetchMeals = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const res = await fetch("https://react-http-84fba-default-rtdb.europe-west1.firebasedatabase.app/meals.json");
+            const data = await res.json();
+
+            if(data) setMeals(data);
+
+        } catch(err) {
+            setError(err);
+        }
+
+        setLoading(false);
+    };
+
+    const orderMeals = async (order) => {
+        // setLoading(true);
+        // setError(null);
+
+        try {
+            const res = await fetch("https://react-http-84fba-default-rtdb.europe-west1.firebasedatabase.app/orders.json", {
+                method: "POST",
+                body: JSON.stringify(order),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+            const data = await res.json();
+            console.log("database response", data);
+
+        } catch(err) {
+            console.error(err);
+            // setError(err);
+        }
+
+        // setLoading(false);
+        // console.log(JSON.stringify(order));
+        resetCart();
+    }
+
+    useEffect(() => {
+        fetchMeals();
+    }, []);
     
     const addItemToCartHandler2 = item => {
         dispatchCart({ type: "add", payload: item });
@@ -84,61 +140,10 @@ export function ContextComponent({ children }) {
         dispatchCart({ type: "remove", payload: { id } });
     };
 
-    const [cartOpened, setCartOpened] = useState(false);
-    const [cartItems, setCartItems] = useState([]);
+    const resetCart = () => {
+        dispatchCart({type: "reset-cart"});
+    }
 
-    const addItemToCartHandler = (newItem) => {
-        //if item already in cart
-        //{id, price, qty, name}
-        const inx = cartItems.findIndex(item => item.id === newItem.id);
-
-        if(inx !== -1) { //repeated item
-            const repeatedItem = cartItems[inx];
-            const qty = repeatedItem.qty + newItem.qty;
-            // const price = repeatedItem.price + newItem.price;
-
-            const updatedItem = { ...repeatedItem, qty };
-            const newCartItems = [...cartItems];
-            newCartItems[inx] = updatedItem;
-
-            setCartItems(newCartItems);
-        } else {
-            setCartItems([...cartItems, newItem]);
-        }
-        // if (cartItems.some(cItem => cItem.id === newItem.id)) {
-        //     setCartItems(oldCartItems => {
-        //         return oldCartItems.map(({ id, qty: oldQty, price: oldPrice, name }) => {
-        //             if (id === newItem.id) {
-        //                 const qty = oldQty + newItem.qty;
-        //                 const price = oldPrice + newItem.price;
-
-        //                 return { id, qty, price, name };
-        //             }
-        //             return { id, qty: oldQty, price: oldPrice, name };
-        //         })
-        //     });
-        // } else {
-        //     setCartItems((oldCartItems) => {
-        //         return [...oldCartItems, newItem];
-        //     });
-        // }
-    };
-    const removeItemFromCartHandler = id => {
-        const updatedItems = [...cartItems];
-        const inx = updatedItems.findIndex(item => item.id === id);
-
-        if(updatedItems[inx].qty > 1) {
-            const updatedItem = { ...updatedItems[inx] };
-            updatedItem.qty -= 1;
-
-            updatedItems[inx] = updatedItem;
-
-            setCartItems(updatedItems);
-        } else {
-            updatedItems.splice(inx, 1);
-            setCartItems(updatedItems);
-        }
-    };
 
     const cartShowHandler = () => {
         setCartOpened(true);
@@ -149,13 +154,16 @@ export function ContextComponent({ children }) {
     };
 
     const context = {
-        DUMMY_MEALS,
+        meals,
         cartOpened,
         cartShowHandler,
         cartCloseHandler,
         cartContainedItems: cartItems2,
         cartAddItem: addItemToCartHandler2,
-        cartRemoveItem: removeItemFromCartHandler2
+        cartRemoveItem: removeItemFromCartHandler2,
+        loading,
+        error,
+        orderMeals
     };
 
     return (

@@ -1,13 +1,22 @@
 import classes from "./Cart.module.css";
 import Modal from "../UI/Modal";
 import CartItem from "./CartItem";
-import { useContext } from "react";
+import Form from "./Form";
+import { useContext, useState } from "react";
 import  Context from "../../store/Context";
 
 function Cart() {
-    const { cartCloseHandler, cartContainedItems } = useContext(Context);
+    const [orderBtnPressed, setOrderBtnPressed] = useState(false);
+
+    const { cartCloseHandler, cartContainedItems, orderMeals } = useContext(Context);
     const totalPrice = cartContainedItems.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2);
     const hasItems = cartContainedItems.length > 0;
+
+    const toggleOrder = hasItems && orderBtnPressed;
+
+    const orderBtnHandler = () => {
+        setOrderBtnPressed((btnState) => !btnState);
+    };
 
     const cartItems = 
         <ul className={classes["cart-items"]}>
@@ -18,6 +27,15 @@ function Cart() {
             })}
         </ul>
 
+    const placeOrder = (client) => {
+        const total = cartContainedItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+        // console.log(total);
+        // console.log(client);
+        cartCloseHandler();
+        //{items: cartContainedItems, client, total}
+        orderMeals({total, items: cartContainedItems, client});
+    }
+
     return (
         <Modal closeHandler={cartCloseHandler}>
             {cartItems}
@@ -27,7 +45,8 @@ function Cart() {
             </div>
             <div className={classes.actions}>
                 <button onClick={cartCloseHandler} className={classes["button--alt"]}>Close</button>
-                {hasItems && <button className={classes.button}>Order</button>}
+                {hasItems && <button onClick={orderBtnHandler} className={classes.button}>Order</button>}
+                {toggleOrder && <Form placeOrder={placeOrder}/>}
             </div>
         </Modal>
     );

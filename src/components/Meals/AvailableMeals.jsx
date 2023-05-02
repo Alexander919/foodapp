@@ -5,19 +5,25 @@ import Context from "../../store/Context";
 import { useContext } from "react";
 
 function AvailableMeals() {
-    const { DUMMY_MEALS } = useContext(Context);
+    const { meals, loading, error } = useContext(Context);
+    // console.log(meals, loading, error);
+    let listOfMeals = <p>No meals available</p>;
 
-    const mealsList = DUMMY_MEALS.map(meal => {
-        return (
-            <MealItem id={meal.id} key={meal.id} name={meal.name} price={meal.price} description={meal.description} />
-        );
-    });
+    if(meals.length > 0) {
+        listOfMeals = meals.map(meal => {
+            return (
+                <MealItem id={meal.id} key={meal.id} name={meal.name} price={meal.price} description={meal.description} />
+            );
+        });
+    }
 
     return (
         <section className={classes.meals}>
             <Card>
                 <ul>
-                    {mealsList}
+                    {error !== null && <p>{error.message}</p>}
+                    {loading && !error && <p>List of meals is loading...</p>}
+                    {!loading && !error && listOfMeals }
                 </ul>
             </Card>
         </section>

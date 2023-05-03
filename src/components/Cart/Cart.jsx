@@ -6,9 +6,9 @@ import { useContext, useState } from "react";
 import  Context from "../../store/Context";
 
 function Cart() {
+    const { cartCloseHandler, cartContainedItems, orderUploading, orderUploadingError, orderPlaced, uploadOrder, uploadOrderAction } = useContext(Context);
     const [orderBtnPressed, setOrderBtnPressed] = useState(false);
 
-    const { cartCloseHandler, cartContainedItems, orderMeals } = useContext(Context);
     const totalPrice = cartContainedItems.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2);
     const hasItems = cartContainedItems.length > 0;
 
@@ -29,15 +29,19 @@ function Cart() {
 
     const placeOrder = (client) => {
         const total = cartContainedItems.reduce((acc, item) => acc + item.price * item.qty, 0);
-        // console.log(total);
-        // console.log(client);
-        cartCloseHandler();
-        //{items: cartContainedItems, client, total}
-        orderMeals({total, items: cartContainedItems, client});
-    }
+        // cartCloseHandler();
 
-    return (
-        <Modal closeHandler={cartCloseHandler}>
+        uploadOrder("https://react-http-84fba-default-rtdb.europe-west1.firebasedatabase.app/orders.json", {
+            method: "POST",
+            body: JSON.stringify({total, items: cartContainedItems, client}),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }, uploadOrderAction);
+    };
+
+    const cart = (
+        <>
             {cartItems}
             <div className={classes.total}>
                 <span>Total Amount</span>
@@ -48,6 +52,14 @@ function Cart() {
                 {hasItems && <button onClick={orderBtnHandler} className={classes.button}>Order</button>}
                 {toggleOrder && <Form placeOrder={placeOrder}/>}
             </div>
+        </>
+    );
+
+    return (
+        <Modal closeHandler={cartCloseHandler}>
+            {!orderUploading && !orderPlaced && cart}
+            {orderUploading && <p>Placing you order...</p>}
+            {!orderUploading && orderPlaced !== null && <p>Thank you, your order has been placed! Order number {orderPlaced.name}.</p>}
         </Modal>
     );
 }

@@ -1,36 +1,8 @@
 import React from "react";
 import { useState, useEffect, useReducer } from "react";
-
-const DUMMY_MEALS = [];
-// const DUMMY_MEALS = [
-//     {
-//         id: 'm1',
-//         name: 'Sushi',
-//         description: 'Finest fish and veggies',
-//         price: 22.99,
-//     },
-//     {
-//         id: 'm2',
-//         name: 'Schnitzel',
-//         description: 'A german specialty!',
-//         price: 16.5,
-//     },
-//     {
-//         id: 'm3',
-//         name: 'Barbecue Burger',
-//         description: 'American, raw, meaty',
-//         price: 12.99,
-//     },
-//     {
-//         id: 'm4',
-//         name: 'Green Bowl',
-//         description: 'Healthy...and green...',
-//         price: 18.99,
-//     },
-// ];
+import useFetch from "../components/hooks/useFetch";
 
 const Context = React.createContext();
-
 
 const cartReducer = (state, action) => {
     let inx;
@@ -79,58 +51,30 @@ const cartReducer = (state, action) => {
 export function ContextComponent({ children }) {
     const [cartItems2, dispatchCart] = useReducer(cartReducer, []);
 
+    const [mealsLoading, mealsError, fetchMeals] = useFetch();
+    const [orderUploading, orderUploadingError, uploadOrder] = useFetch();
+
+    const [orderPlaced, setOrderPlaced] = useState(null);
     const [cartOpened, setCartOpened] = useState(false);
     const [meals, setMeals] = useState([]);
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    //TODO: http Hook
-    const fetchMeals = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            const res = await fetch("https://react-http-84fba-default-rtdb.europe-west1.firebasedatabase.app/meals.json");
-            const data = await res.json();
-
-            if(data) setMeals(data);
-
-        } catch(err) {
-            setError(err);
-        }
-
-        setLoading(false);
+    const mealsDataAction = (data) => {
+        setMeals(data);
     };
 
-    const orderMeals = async (order) => {
-        // setLoading(true);
-        // setError(null);
+    const resetCart = () => {
+        dispatchCart({type: "reset-cart"});
+    };
 
-        try {
-            const res = await fetch("https://react-http-84fba-default-rtdb.europe-west1.firebasedatabase.app/orders.json", {
-                method: "POST",
-                body: JSON.stringify(order),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            });
-            const data = await res.json();
-            console.log("database response", data);
-
-        } catch(err) {
-            console.error(err);
-            // setError(err);
-        }
-
-        // setLoading(false);
-        // console.log(JSON.stringify(order));
+    const uploadOrderAction = (data) => {
+        console.log("database response", data);
         resetCart();
-    }
+        setOrderPlaced(data);
+    };
 
     useEffect(() => {
-        fetchMeals();
-    }, []);
+        fetchMeals("https://react-http-84fba-default-rtdb.europe-west1.firebasedatabase.app/meals.json", null, mealsDataAction);
+    }, [fetchMeals]);
     
     const addItemToCartHandler2 = item => {
         dispatchCart({ type: "add", payload: item });
@@ -140,17 +84,13 @@ export function ContextComponent({ children }) {
         dispatchCart({ type: "remove", payload: { id } });
     };
 
-    const resetCart = () => {
-        dispatchCart({type: "reset-cart"});
-    }
-
-
     const cartShowHandler = () => {
         setCartOpened(true);
     };
 
     const cartCloseHandler = () => {
         setCartOpened(false);
+        setOrderPlaced(null);
     };
 
     const context = {
@@ -161,9 +101,13 @@ export function ContextComponent({ children }) {
         cartContainedItems: cartItems2,
         cartAddItem: addItemToCartHandler2,
         cartRemoveItem: removeItemFromCartHandler2,
-        loading,
-        error,
-        orderMeals
+        mealsLoading,
+        mealsError,
+        orderUploading,
+        orderUploadingError,
+        orderPlaced,
+        uploadOrder,
+        uploadOrderAction
     };
 
     return (

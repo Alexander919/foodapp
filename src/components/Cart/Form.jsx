@@ -1,10 +1,7 @@
 import classes from "./Form.module.css";
 import useInput from "../hooks/useInput";
-import { useContext } from "react";
-import Context from "../../store/Context";
 
 function Form({placeOrder}) {
-    useContext(Context);
     const {
         "form-control": formControl,
         invalid,

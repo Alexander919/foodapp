@@ -5,7 +5,7 @@ import Context from "../../store/Context";
 import { useContext } from "react";
 
 function AvailableMeals() {
-    const { meals, loading, error } = useContext(Context);
+    const { meals, mealsLoading: loading, mealsError: error } = useContext(Context);
     // console.log(meals, loading, error);
     let listOfMeals = <p>No meals available</p>;
 

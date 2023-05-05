@@ -28,12 +28,10 @@ function Cart() {
         </ul>
 
     const placeOrder = (client) => {
-        const total = cartContainedItems.reduce((acc, item) => acc + item.price * item.qty, 0);
         // cartCloseHandler();
-
         uploadOrder("https://react-http-84fba-default-rtdb.europe-west1.firebasedatabase.app/orders.json", {
             method: "POST",
-            body: JSON.stringify({total, items: cartContainedItems, client}),
+            body: JSON.stringify({total: totalPrice, items: cartContainedItems, client}),
             headers: {
                 "Content-Type": "application/json"
             }
